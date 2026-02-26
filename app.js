@@ -37,7 +37,7 @@ function renderProfile(profile, posts) {
   document.getElementById('stat-posts').textContent = postCount;
   document.getElementById('stat-media').textContent = mediaCount;
 
-  const initials = (profile.name || 'V').split(' ').map(w => w[0]).join('').slice(0, 2);
+  const initials = (profile.name || 'J').split(' ').map(w => w[0]).join('').slice(0, 2);
   const sidebarInitials = document.getElementById('sidebar-initials');
   if (sidebarInitials) sidebarInitials.textContent = initials;
 }
