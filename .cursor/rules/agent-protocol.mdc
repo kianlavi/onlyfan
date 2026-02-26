@@ -1,0 +1,32 @@
+---
+description: Core agent operating protocol — orchestration, git discipline, and changelog
+alwaysApply: true
+---
+
+# Agent Operating Protocol
+
+Read and follow `CLAUDE.md` at the project root before making any changes. It contains the full protocol. Key rules:
+
+## Sub-Agent Orchestration
+
+- Break complex tasks into independent sub-agent work units
+- **Never let two sub-agents modify the same file concurrently** — partition files so each has exactly one owner at a time
+- Sequence dependent work; parallelize only independent file changes
+
+## Git Discipline
+
+- **Commit after every meaningful unit of work** (bug fix, feature, refactor)
+- Write clear imperative commit messages (≤72 char summary)
+- **Push to origin immediately after every commit** — do not leave commits local-only
+- Never force-push to main without explicit user approval
+
+## Changelog
+
+- After committing and pushing, **append an entry to the Version History section in `CLAUDE.md`**
+- Format: `- **YYYY-MM-DD HH:MM** | <short summary of what changed and why>`
+
+## Before Any Edit
+
+- Read the file first
+- Check `CLAUDE.md` for the file map and project context
+- Keep the static site simple — no build tools or frameworks unless explicitly requested
