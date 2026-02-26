@@ -1,18 +1,7 @@
 [
   {
-    "id": "post-001",
-    "text": "new piece just dropped \u2728 been working on this one for weeks. the texture on canvas hits different in person",
-    "image": "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800",
-    "likes": 1247,
-    "tips": 15.00,
-    "comments": 43,
-    "locked": false,
-    "price": null,
-    "date": "2026-02-26T09:30:00Z"
-  },
-  {
     "id": "post-002",
-    "text": "studio sneak peek \ud83d\udc40 something big is coming next week",
+    "text": "studio sneak peek 👀 something big is coming next week",
     "image": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800",
     "likes": 893,
     "tips": null,
@@ -23,10 +12,10 @@
   },
   {
     "id": "post-003",
-    "text": "exclusive process video \u2014 watch me paint this piece from start to finish. 4 hours condensed into 12 minutes",
+    "text": "exclusive process video — watch me paint this piece from start to finish. 4 hours condensed into 12 minutes",
     "image": "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800",
     "likes": 2104,
-    "tips": 50.00,
+    "tips": 50,
     "comments": 89,
     "locked": true,
     "price": 9.99,
@@ -34,10 +23,10 @@
   },
   {
     "id": "post-004",
-    "text": "thank you all so much for 4K fans!! i never imagined this little art page would grow like this. love every single one of you \u2764\ufe0f",
+    "text": "thank you all so much for 4K fans!! i never imagined this little art page would grow like this. love every single one of you ❤️",
     "image": null,
     "likes": 3891,
-    "tips": 125.00,
+    "tips": 125,
     "comments": 156,
     "locked": false,
     "price": null,
@@ -45,10 +34,10 @@
   },
   {
     "id": "post-005",
-    "text": "unreleased collection preview \u2014 these 6 pieces will be available as prints next month. subscribers get first access + 30% off",
+    "text": "unreleased collection preview — these 6 pieces will be available as prints next month. subscribers get first access + 30% off",
     "image": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800",
     "likes": 1567,
-    "tips": 35.00,
+    "tips": 35,
     "comments": 64,
     "locked": true,
     "price": 14.99,
