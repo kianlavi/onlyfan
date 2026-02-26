@@ -1,32 +1,240 @@
 const API = 'https://api.github.com';
+const ENC_FILE = '.admin.enc.json';
+
 let ghToken = '';
 let ghRepo = '';
 let currentPosts = [];
 let currentProfile = {};
 let postsSha = '';
 let profileSha = '';
+let encConfigSha = '';
+
+/* ─── Crypto: AES-256-GCM with PBKDF2 key derivation ─── */
+
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+function toBase64(buffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
+
+function fromBase64(str) {
+  return Uint8Array.from(atob(str), c => c.charCodeAt(0));
+}
+
+async function encryptToken(token, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(password, salt);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    new TextEncoder().encode(token)
+  );
+  return {
+    salt: toBase64(salt),
+    iv: toBase64(iv),
+    data: toBase64(ciphertext)
+  };
+}
+
+async function decryptToken(encData, password) {
+  const salt = fromBase64(encData.salt);
+  const iv = fromBase64(encData.iv);
+  const ciphertext = fromBase64(encData.data);
+  const key = await deriveKey(password, salt);
+  const plaintext = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    ciphertext
+  );
+  return new TextDecoder().decode(plaintext);
+}
+
+/* ─── Init & Auth Flow ─── */
 
 document.addEventListener('DOMContentLoaded', () => {
-  const savedRepo = localStorage.getItem('onlyfan_repo');
-  const savedToken = localStorage.getItem('onlyfan_token');
-
-  if (savedRepo) document.getElementById('gh-repo').value = savedRepo;
-  if (savedToken) document.getElementById('gh-token').value = savedToken;
-
-  if (savedRepo && savedToken) {
-    ghRepo = savedRepo;
-    ghToken = savedToken;
-    loadData();
-  }
-
-  setDefaultDate();
   bindEvents();
+  initAuth();
 });
 
+async function initAuth() {
+  const sessionToken = sessionStorage.getItem('onlyfan_token');
+  const sessionRepo = sessionStorage.getItem('onlyfan_repo');
+
+  if (sessionToken && sessionRepo) {
+    ghToken = sessionToken;
+    ghRepo = sessionRepo;
+    showAdminUI();
+    loadData();
+    return;
+  }
+
+  try {
+    const res = await fetch(ENC_FILE);
+    if (res.ok) {
+      showView('login');
+    } else {
+      showView('setup');
+    }
+  } catch {
+    showView('setup');
+  }
+}
+
+function showView(view) {
+  document.getElementById('view-setup').style.display = view === 'setup' ? 'block' : 'none';
+  document.getElementById('view-login').style.display = view === 'login' ? 'block' : 'none';
+  document.getElementById('admin-content').style.display = view === 'admin' ? 'block' : 'none';
+}
+
+function showAdminUI() {
+  showView('admin');
+  setDefaultDate();
+}
+
+async function doSetup() {
+  const btn = document.getElementById('btn-setup');
+  const status = document.getElementById('setup-status');
+  btn.disabled = true;
+  btn.textContent = 'Setting up...';
+
+  try {
+    const repo = document.getElementById('setup-repo').value.trim();
+    const token = document.getElementById('setup-token').value.trim();
+    const password = document.getElementById('setup-password').value;
+    const confirm = document.getElementById('setup-password-confirm').value;
+
+    if (!repo || !token || !password) {
+      throw new Error('Please fill in all fields.');
+    }
+    if (password !== confirm) {
+      throw new Error('Passwords do not match.');
+    }
+    if (password.length < 4) {
+      throw new Error('Password must be at least 4 characters.');
+    }
+
+    ghRepo = repo;
+    ghToken = token;
+
+    const res = await ghFetch(`/repos/${repo}`);
+    if (!res.ok) throw new Error('Repository not found or token invalid.');
+
+    const encrypted = await encryptToken(token, password);
+    const configContent = JSON.stringify({ repo, ...encrypted }, null, 2);
+
+    let sha = undefined;
+    try {
+      const existing = await ghFetch(`/repos/${repo}/contents/${ENC_FILE}`);
+      if (existing.ok) {
+        const existingData = await existing.json();
+        sha = existingData.sha;
+      }
+    } catch { /* file doesn't exist yet */ }
+
+    const body = {
+      message: 'Add encrypted admin config',
+      content: btoa(unescape(encodeURIComponent(configContent)))
+    };
+    if (sha) body.sha = sha;
+
+    const putRes = await ghFetch(`/repos/${repo}/contents/${ENC_FILE}`, {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    });
+    if (!putRes.ok) throw new Error('Failed to save config to repo.');
+
+    sessionStorage.setItem('onlyfan_token', token);
+    sessionStorage.setItem('onlyfan_repo', repo);
+
+    showAdminUI();
+    loadData();
+    showStatus('Setup complete! Share the password with anyone who needs admin access.', 'success');
+  } catch (err) {
+    status.textContent = err.message;
+    status.style.color = 'var(--danger)';
+    ghToken = '';
+    ghRepo = '';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Encrypt & Save';
+  }
+}
+
+async function doLogin() {
+  const btn = document.getElementById('btn-login');
+  const status = document.getElementById('login-status');
+  btn.disabled = true;
+  btn.textContent = 'Unlocking...';
+
+  try {
+    const password = document.getElementById('login-password').value;
+    if (!password) throw new Error('Please enter the password.');
+
+    const res = await fetch(ENC_FILE);
+    if (!res.ok) throw new Error('Config file not found. Run setup first.');
+    const encConfig = await res.json();
+
+    let token;
+    try {
+      token = await decryptToken(encConfig, password);
+    } catch {
+      throw new Error('Wrong password.');
+    }
+
+    ghToken = token;
+    ghRepo = encConfig.repo;
+
+    const verify = await ghFetch(`/repos/${ghRepo}`);
+    if (!verify.ok) throw new Error('Token is invalid or expired. Ask the owner to run setup again.');
+
+    sessionStorage.setItem('onlyfan_token', token);
+    sessionStorage.setItem('onlyfan_repo', ghRepo);
+
+    showAdminUI();
+    loadData();
+  } catch (err) {
+    status.textContent = err.message;
+    status.style.color = 'var(--danger)';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Unlock';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('onlyfan_token');
+  sessionStorage.removeItem('onlyfan_repo');
+  ghToken = '';
+  ghRepo = '';
+  showView('login');
+}
+
+/* ─── Event Binding ─── */
+
 function bindEvents() {
-  document.getElementById('btn-connect').addEventListener('click', connect);
+  document.getElementById('btn-setup').addEventListener('click', doSetup);
+  document.getElementById('btn-login').addEventListener('click', doLogin);
+  document.getElementById('btn-logout').addEventListener('click', doLogout);
   document.getElementById('btn-save-profile').addEventListener('click', saveProfile);
   document.getElementById('btn-publish').addEventListener('click', publishPost);
+  document.getElementById('btn-show-setup').addEventListener('click', () => showView('setup'));
+
+  document.getElementById('login-password').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doLogin();
+  });
 
   document.getElementById('post-locked').addEventListener('change', (e) => {
     document.getElementById('price-group').style.display = e.target.checked ? 'block' : 'none';
@@ -62,39 +270,7 @@ function setDefaultDate() {
   document.getElementById('post-date').value = now.toISOString().slice(0, 16);
 }
 
-async function connect() {
-  const repo = document.getElementById('gh-repo').value.trim();
-  const token = document.getElementById('gh-token').value.trim();
-  const status = document.getElementById('connect-status');
-
-  if (!repo || !token) {
-    status.textContent = 'Please fill in both fields.';
-    status.style.color = 'var(--danger)';
-    return;
-  }
-
-  ghRepo = repo;
-  ghToken = token;
-
-  status.textContent = 'Connecting...';
-  status.style.color = 'var(--text-secondary)';
-
-  try {
-    const res = await ghFetch(`/repos/${repo}`);
-    if (!res.ok) throw new Error('Repository not found or token invalid.');
-
-    localStorage.setItem('onlyfan_repo', repo);
-    localStorage.setItem('onlyfan_token', token);
-
-    status.textContent = 'Connected!';
-    status.style.color = 'var(--success)';
-
-    await loadData();
-  } catch (err) {
-    status.textContent = err.message;
-    status.style.color = 'var(--danger)';
-  }
-}
+/* ─── Data Loading ─── */
 
 async function loadData() {
   try {
@@ -164,6 +340,8 @@ function renderPostsList(posts) {
       </div>`;
   }).join('');
 }
+
+/* ─── Post & Profile Actions ─── */
 
 async function saveProfile() {
   const btn = document.getElementById('btn-save-profile');
