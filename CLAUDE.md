@@ -47,6 +47,7 @@ Format: `- **YYYY-MM-DD HH:MM** | <short summary of what changed and why>`
 
 - **2025-02-26** | Initial commit history: static OnlyFan site with index, admin page, styling, and profile/post data
 - **2026-02-26** | Created CLAUDE.md with agent orchestration rules, git discipline, and changelog protocol
+- **2026-02-26** | Added README.md with project summary, admin setup instructions, and file map
 
 ---
 
@@ -66,6 +67,7 @@ This is **OnlyFan** — a static site hosted on GitHub Pages.
 | `profile.json` | Profile configuration data |
 | `posts.json` | Post content data |
 | `images/` | Static image assets |
+| `README.md` | Project documentation |
 | `CLAUDE.md` | This file — agent operating protocol |
 
 ### Tech Stack
