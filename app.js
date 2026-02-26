@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const profile = await profileRes.json();
     const posts = await postsRes.json();
 
-    renderProfile(profile, posts.length);
+    renderProfile(profile, posts);
     renderFeed(posts, profile);
   } catch (err) {
     console.error('Failed to load data:', err);
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-function renderProfile(profile, postCount) {
+function renderProfile(profile, posts) {
   const banner = document.getElementById('profile-banner');
   if (profile.banner) {
     banner.style.backgroundImage = `url('${profile.banner}')`;
@@ -30,9 +30,16 @@ function renderProfile(profile, postCount) {
   document.getElementById('profile-name').textContent = profile.name;
   document.getElementById('profile-handle').textContent = profile.handle;
   document.getElementById('profile-bio').textContent = profile.bio;
+
+  const postCount = posts.length;
+  const mediaCount = posts.filter(p => p.image).length;
+
   document.getElementById('stat-posts').textContent = postCount;
-  document.getElementById('stat-likes').textContent = formatNumber(profile.totalLikes || 0);
-  document.getElementById('stat-fans').textContent = formatNumber(profile.subscribers || 0);
+  document.getElementById('stat-media').textContent = mediaCount;
+
+  const initials = (profile.name || 'V').split(' ').map(w => w[0]).join('').slice(0, 2);
+  const sidebarInitials = document.getElementById('sidebar-initials');
+  if (sidebarInitials) sidebarInitials.textContent = initials;
 }
 
 function renderFeed(posts, profile) {
@@ -57,7 +64,7 @@ function renderFeed(posts, profile) {
 }
 
 function buildPostHTML(post, profile) {
-  const timeAgo = getTimeAgo(new Date(post.date));
+  const dateStr = formatDate(new Date(post.date));
   const isLocked = post.locked;
 
   let imageHTML = '';
@@ -96,9 +103,15 @@ function buildPostHTML(post, profile) {
       <div class="post-header">
         <img class="post-avatar" src="${profile.avatar || ''}" alt="${profile.name}">
         <div class="post-meta">
-          <div class="post-author">${profile.name}</div>
-          <div class="post-time">${timeAgo}</div>
+          <div class="post-author">
+            ${escapeHTML(profile.name)}
+            <span class="verified-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+          </div>
+          <div class="post-time">${dateStr}</div>
         </div>
+        <button class="post-menu">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
       </div>
       ${post.text ? `<div class="post-text">${escapeHTML(post.text)}</div>` : ''}
       ${imageHTML}
@@ -112,6 +125,9 @@ function buildPostHTML(post, profile) {
           ${post.comments || 0}
         </button>
         ${tipHTML}
+        <button class="action-btn" style="margin-left: auto;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </button>
       </div>
     </article>`;
 }
@@ -128,20 +144,7 @@ function formatNumber(num) {
   return num.toString();
 }
 
-function getTimeAgo(date) {
-  const seconds = Math.floor((new Date() - date) / 1000);
-  const intervals = [
-    { label: 'y', seconds: 31536000 },
-    { label: 'mo', seconds: 2592000 },
-    { label: 'w', seconds: 604800 },
-    { label: 'd', seconds: 86400 },
-    { label: 'h', seconds: 3600 },
-    { label: 'm', seconds: 60 },
-  ];
-
-  for (const interval of intervals) {
-    const count = Math.floor(seconds / interval.seconds);
-    if (count >= 1) return `${count}${interval.label} ago`;
-  }
-  return 'just now';
+function formatDate(date) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[date.getMonth()]} ${date.getDate()}`;
 }
