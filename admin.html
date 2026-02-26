@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OnlyFan — Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+        <span>OnlyFan</span>
+      </div>
+      <a href="index.html" class="nav-link">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+      </a>
+      <a href="admin.html" class="nav-link active">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Admin
+      </a>
+    </nav>
+
+    <div class="admin-container">
+      <h1>Admin Panel</h1>
+
+      <div id="status-msg" class="status-msg"></div>
+
+      <!-- GitHub Setup -->
+      <div class="card" id="setup-card">
+        <h2>GitHub Connection</h2>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">
+          Connect to your GitHub repo to publish posts. You'll need a
+          <a href="https://github.com/settings/tokens/new?scopes=repo&description=OnlyFan+Admin" target="_blank">Personal Access Token</a>
+          with <strong>repo</strong> scope.
+        </p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Repository (owner/name)</label>
+            <input type="text" id="gh-repo" placeholder="username/onlyfan">
+          </div>
+          <div class="form-group">
+            <label>Personal Access Token</label>
+            <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx">
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-connect">Connect</button>
+        <span id="connect-status" style="margin-left: 12px; font-size: 0.85rem;"></span>
+      </div>
+
+      <!-- Profile Editor -->
+      <div class="card">
+        <h2>Profile</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Display Name</label>
+            <input type="text" id="prof-name" placeholder="Viva">
+          </div>
+          <div class="form-group">
+            <label>Handle</label>
+            <input type="text" id="prof-handle" placeholder="@viva">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Bio</label>
+          <textarea id="prof-bio" placeholder="artist / creator"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Avatar URL</label>
+            <input type="url" id="prof-avatar" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>Banner URL</label>
+            <input type="url" id="prof-banner" placeholder="https://...">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Subscribers (display count)</label>
+            <input type="number" id="prof-subscribers" placeholder="4200">
+          </div>
+          <div class="form-group">
+            <label>Total Likes (display count)</label>
+            <input type="number" id="prof-likes" placeholder="31000">
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-save-profile">Save Profile</button>
+      </div>
+
+      <!-- New Post -->
+      <div class="card">
+        <h2>New Post</h2>
+        <div class="form-group">
+          <label>Caption</label>
+          <textarea id="post-text" placeholder="What's on your mind..."></textarea>
+        </div>
+
+        <div class="file-input-wrapper">
+          <div class="form-group">
+            <label>Image URL</label>
+            <input type="url" id="post-image-url" placeholder="https://...">
+          </div>
+          <span class="or-divider">or</span>
+          <div class="form-group">
+            <label>Upload Image</label>
+            <input type="file" id="post-image-file" accept="image/*" style="color: var(--text-secondary); font-size: 0.85rem;">
+          </div>
+        </div>
+        <img id="image-preview" class="image-preview" alt="Preview">
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Likes</label>
+            <input type="number" id="post-likes" placeholder="Random" min="0">
+          </div>
+          <div class="form-group">
+            <label>Tip Amount ($)</label>
+            <input type="number" id="post-tips" placeholder="0" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Comments</label>
+            <input type="number" id="post-comments" placeholder="0" min="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <div class="toggle-group">
+              <input type="checkbox" id="post-locked" class="toggle">
+              <label for="post-locked" style="margin-bottom: 0; cursor: pointer;">Locked (subscribers only)</label>
+            </div>
+          </div>
+          <div class="form-group" id="price-group" style="display: none;">
+            <label>PPV Price ($)</label>
+            <input type="number" id="post-price" placeholder="9.99" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Date</label>
+          <input type="datetime-local" id="post-date">
+        </div>
+
+        <button class="btn btn-primary" id="btn-publish">Publish Post</button>
+      </div>
+
+      <!-- Existing Posts -->
+      <div class="card">
+        <h2>Existing Posts</h2>
+        <div id="posts-list">
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Connect to GitHub to manage posts.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
