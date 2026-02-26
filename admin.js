@@ -1,5 +1,5 @@
 const API = 'https://api.github.com';
-const ENC_FILE = '.admin.enc.json';
+const ENC_FILE = 'admin-config.enc.json';
 
 let ghToken = '';
 let ghRepo = '';
